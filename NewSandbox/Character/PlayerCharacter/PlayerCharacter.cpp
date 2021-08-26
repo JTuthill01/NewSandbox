@@ -369,15 +369,12 @@ void APlayerCharacter::ScanForPickups()
 	{
 		if (HitResult.Actor.Get())
 		{
-			if (IInteract* iTemp = Cast<IInteract>(HitResult.Actor.Get()))
+			if (HitResult.Actor.Get()->GetClass()->ImplementsInterface(UInteract::StaticClass()))
 			{
-				if (HitResult.Actor.Get()->GetClass()->ImplementsInterface(UInteract::StaticClass()))
-				{
-					iTemp->Execute_InteractableFound(HitResult.Actor.Get());
+				IInteract::Execute_InteractableFound(HitResult.Actor.Get());
 
-					if (!PickupWidget->IsInViewport())
-						PickupWidget->AddToViewport(999);
-				}
+				if (!PickupWidget->IsInViewport())
+					PickupWidget->AddToViewport(999);
 			}
 		}
 	}
