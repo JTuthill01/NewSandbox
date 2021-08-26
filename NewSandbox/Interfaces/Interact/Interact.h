@@ -19,4 +19,7 @@ class NEWSANDBOX_API IInteract
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void InteractableFound();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void Interaction();
 };

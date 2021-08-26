@@ -16,11 +16,9 @@ public:
 	APickupBase();
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-public:
 	void InteractableFound_Implementation() override;
+
+	void Interaction_Implementation() override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -29,6 +27,9 @@ protected:
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Mesh)
 	class UStaticMeshComponent* PickupMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
+	class USphereComponent* CollisionSphere;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupType)
 	EPickupType Type;

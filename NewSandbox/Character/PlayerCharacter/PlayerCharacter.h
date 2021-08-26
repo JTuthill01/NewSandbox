@@ -141,7 +141,6 @@ protected:
 private:
 	void InterpCapsuleHalfHeight(float DeltaTime);
 	void ScanForPickups();
-	void CheckForInteraction(AActor* HitActor, FHitResult& HitResult);
 	void Initialize();
 	void Fire();
 	void StopFire();

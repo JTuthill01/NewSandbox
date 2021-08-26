@@ -363,7 +363,7 @@ void APlayerCharacter::ScanForPickups()
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
 
-	const bool bIsInteractable = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, TraceObjects, true, ActorsToIgnore, EDrawDebugTrace::ForDuration, HitResult, true);
+	const bool bIsInteractable = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, TraceObjects, true, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true);
 
 	if (bIsInteractable)
 	{
@@ -386,8 +386,10 @@ void APlayerCharacter::ScanForPickups()
 	}
 }
 
-void APlayerCharacter::CheckForInteraction(AActor* HitActor, FHitResult& HitResult)
+void APlayerCharacter::Interact()
 {
+	FHitResult HitResult;
+
 	FVector Start = Camera->GetComponentLocation();
 	FVector End = Start + (Camera->GetComponentRotation().Vector() * 400.F);
 
@@ -403,29 +405,14 @@ void APlayerCharacter::CheckForInteraction(AActor* HitActor, FHitResult& HitResu
 
 	if (bCanInteract)
 	{
-		/*HitActor = HitResult.Actor.Get();
-
-		IInteract* iTemp = Cast<IInteract>(HitActor);
-		if (iTemp)
+		if (HitResult.Actor.Get())
 		{
-			if (HitActor)
+			if (HitResult.Actor.Get()->GetClass()->ImplementsInterface(UInteract::StaticClass()))
 			{
-				if (HitActor->GetClass()->ImplementsInterface(UInteract::StaticClass()))
-				{
-					iTemp->Execute_OnInteract(HitActor);
-				}
+				IInteract::Execute_Interaction(HitResult.Actor.Get());
 			}
-		}*/
+		}
 	}
-}
-
-void APlayerCharacter::Interact()
-{
-	FHitResult HitResult;
-
-	AActor* TempActor = HitResult.Actor.Get();
-
-	CheckForInteraction(TempActor, HitResult);
 }
 
 void APlayerCharacter::Initialize()
