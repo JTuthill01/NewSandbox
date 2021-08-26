@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "NewSandbox/Enums/Enums.h"
 #include "NewSandbox/Structs/Player/PlayerAnimsDataTable.h"
@@ -30,7 +29,7 @@ public:
 
 	class UAnimInstance* Instance;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -46,6 +45,7 @@ public:
 public:
 	//Getters
 	FORCEINLINE class UCameraComponent* GetCamera() const { return Camera; }
+	FORCEINLINE class UPickupWidget* GetPickupWidget() const { return PickupWidget; }
 	FORCEINLINE USkeletalMeshComponent* GetPlayerArms() const { return Arms; }
 	FORCEINLINE AWeaponBase* GetCurrentWeapon() { return CurrentWeapon; }
 	FORCEINLINE AWeaponBase* GetWeaponSlot_01() { return WeaponSlot_01; }
@@ -154,6 +154,12 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = SK_Mesh, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Arms;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widgets, meta = (AllowPrivateAccess = "true"))
+	class UPickupWidget* PickupWidget;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Widgets, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UPickupWidget> WidgetToSpawn;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	class AWeaponBase* CurrentWeapon;

@@ -8,6 +8,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "NewSandbox/Interfaces/Interact/Interact.h"
+#include "NewSandbox/Widgets/Pickup/PickupWidget.h"
 
 APlayerCharacter::APlayerCharacter() : HasWeaponEnum(EHasWeapon::EHW_NoWeapon), MaxHealth(100), CurrentHealth(MaxHealth), MaxArmor(100), CurrentArmor(MaxArmor),bIsCrouching(false), 
 	bIsChangingWeapon(false), CrouchMovementSpeed(300.F), CrouchGroundFriction(100.F),  BaseMovementSpeed(650.F), BaseGroundFriction(2.F), CrouchingCapsuleHalfHeight(44.F), 
@@ -31,6 +32,8 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	Initialize();
+
+	PickupWidget = CreateWidget<UPickupWidget>(GetWorld(), WidgetToSpawn);
 }
 
 bool APlayerCharacter::SpawnInitialWeapon(TSubclassOf<class AWeaponBase> WeaponToSpawn)
@@ -349,13 +352,18 @@ void APlayerCharacter::ScanForPickups()
 {
 	FHitResult HitResult;
 
-	FVector StartVector = Camera->GetComponentLocation();
-	FVector EndVector = StartVector + (Camera->GetForwardVector() * 400.F);
+	FVector Start = Camera->GetComponentLocation();
+	FVector End = Start + (Camera->GetComponentRotation().Vector() * 400.F);
 
-	FCollisionQueryParams Parms;
-	Parms.AddIgnoredActor(this);
+	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
+	TArray<AActor*> ActorsToIgnore;
 
-	const bool bIsInteractable = GetWorld()->LineTraceSingleByChannel(HitResult, StartVector, EndVector, ECC_WorldStatic, Parms);
+	ActorsToIgnore.Add(this);
+	ActorsToIgnore.Add(CurrentWeapon);
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
+
+	const bool bIsInteractable = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, TraceObjects, true, ActorsToIgnore, EDrawDebugTrace::ForDuration, HitResult, true);
 
 	if (bIsInteractable)
 	{
@@ -365,14 +373,20 @@ void APlayerCharacter::ScanForPickups()
 			{
 				if (HitResult.Actor.Get()->GetClass()->ImplementsInterface(UInteract::StaticClass()))
 				{
-					iTemp->Execute_OnBeginInteract(HitResult.Actor.Get());
+					iTemp->Execute_InteractableFound(HitResult.Actor.Get());
+
+					if (!PickupWidget->IsInViewport())
+						PickupWidget->AddToViewport(999);
 				}
 			}
 		}
 	}
 
 	else
-		RemovePickupWidget.Broadcast();
+	{
+		if (PickupWidget->IsInViewport())
+			PickupWidget->RemoveFromParent();
+	}
 }
 
 void APlayerCharacter::CheckForInteraction(AActor* HitActor, FHitResult& HitResult)
@@ -431,3 +445,4 @@ APlayerCharacter* APlayerCharacter::GetPlayerRef_Implementation() { return this;
 void APlayerCharacter::StopFire() { CurrentWeapon->StopFire(); }
 
 bool APlayerCharacter::HasFullHealth() { return CurrentHealth >= MaxHealth; }
+

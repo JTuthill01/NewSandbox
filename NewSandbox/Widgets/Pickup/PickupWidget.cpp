@@ -2,7 +2,14 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 
-UPickupWidget::UPickupWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer){}
+UPickupWidget::UPickupWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
+
+void UPickupWidget::UpdatePickupWidget(FName Name, class UTexture2D* Icon)
+{
+	PickupText->SetText(FText::FromName(Name));
+
+	PickupIcon->SetBrushFromTexture(Icon);
+}
 
 void UPickupWidget::NativeConstruct()
 {
@@ -23,16 +30,4 @@ FVector2D UPickupWidget::GetScreenSize()
 		GEngine->GameViewport->GetViewportSize(Result);
 
 	return Result;
-}
-
-void UPickupWidget::SetPickupName(FText Name)
-{
-	if (IsValid(PickupText))
-		PickupText->SetText(Name);
-}
-
-void UPickupWidget::SetPickupIcon(UTexture2D* Icon)
-{
-	if (IsValid(IconImage))
-		IconImage->SetBrushFromTexture(Icon);
 }

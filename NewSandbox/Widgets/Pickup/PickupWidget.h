@@ -2,30 +2,25 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Styling/SlateBrush.h"
+#include "NewSandbox/Interfaces/Widgets/Pickup/WidgetInterface.h"
 #include "PickupWidget.generated.h"
 
-UCLASS()
-class NEWSANDBOX_API UPickupWidget : public UUserWidget
+UCLASS(Abstract)
+class NEWSANDBOX_API UPickupWidget : public UUserWidget, public IWidgetInterface
 {
 	GENERATED_BODY()
 
 public:
 	UPickupWidget(const FObjectInitializer& ObjectInitializer);
-	
-public:
-	UFUNCTION()
-	void SetPickupName(FText Name);
 
-	UFUNCTION(BlueprintCallable)
-	void SetPickupIcon(class UTexture2D* Icon);
+	 virtual void UpdatePickupWidget(FName Name, class UTexture2D* Icon) override;
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BindWidget))
+	UPROPERTY(meta = (BindWidget))
+	class UImage* PickupIcon;
+
+	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* PickupText;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (BindWidget))
-	class UImage* IconImage;
 
 protected:
 	virtual void NativeConstruct() override;
