@@ -7,6 +7,7 @@
 #include "WeaponBase.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentTotalAmmo, int32, TotalAmmoCount);
 
 UCLASS()
 class NEWSANDBOX_API AWeaponBase : public AActor
@@ -21,6 +22,7 @@ public:
 	//Getters
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE FName GetSocketName() const { return SocketName; }
+	FORCEINLINE FName GetNameOfWeapon() const { return NameOfWeapon; }
 	FORCEINLINE EWeaponName GetCurrentWeaponName() const { return WeaponName; }
 	FORCEINLINE EWeaponClass GetCurrentWeaponClass() const { return WeaponClass; }
 	FORCEINLINE FWeaponData GetWeaponData() const { return WeaponData; }
@@ -39,9 +41,6 @@ public:
 	FORCEINLINE void SetIsReloading(bool IsReloading) { bIsReloading = IsReloading; }
 
 public:
-	UFUNCTION(BlueprintCallable)
-	AWeaponBase* SpawnWeapon(class APlayerCharacter* Player, AWeaponBase* CurrentWeapon, AWeaponBase* Slot1, AWeaponBase* Slot2, TSubclassOf<AWeaponBase> WeaponToSpawn, EWeaponSlot WeaponSlot, EHasWeapon HasWeapon);
-
 	UFUNCTION(BlueprintCallable)
 	virtual void StopFire();
 
@@ -79,7 +78,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnWeaponChanged WeaponChanged;
 
+	UPROPERTY(BlueprintAssignable)
+	FUpdateCurrentTotalAmmo NewTotalAmmo;
+
 public:
+	void SetCurrentTotalAmmo(int32 Amount);
+
 	bool HasFullMag();
 
 	bool IsAmmoFull();
@@ -131,6 +135,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WeaponSocketName)
 	FName SocketName;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WeaponName)
+	FName NameOfWeapon;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
 	bool bShouldReload;
 
@@ -161,8 +168,10 @@ protected:
 	FTransform FireTransform;
 
 	float ReloadTimer;
+	float FireTimer;
 
 	FTimerHandle ReloadTimerHandle;
+	FTimerHandle FireTimerHandle;
 
 private:
 	void BulletTrace(FHitResult& HitResult, FTransform& ProjectileTransform);

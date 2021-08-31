@@ -18,12 +18,14 @@ void AM4A1::WeaponFire()
 
 	if (WeaponAnimInstance)
 	{
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
 
 		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh);
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AM4A1::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -46,4 +48,11 @@ void AM4A1::ResetIsReloading()
 	bCanFire = true;
 }
 
+void AM4A1::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 
+	bCanFire = true;
+
+	bIsReloading = false;
+}

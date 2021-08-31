@@ -31,6 +31,7 @@ protected:
 
 private:
 	void UpdateReloadAmmo();
+	void ResetCanFire();
 
 	FTimerHandle ShotgunReloadLoopTimerHandle;
 	FTimerHandle ShotgunReloadTimerHandle;

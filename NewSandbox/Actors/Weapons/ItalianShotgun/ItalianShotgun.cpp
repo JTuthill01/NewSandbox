@@ -77,13 +77,13 @@ void AItalianShotgun::ShotgunReloadEnd()
 {
 	Super::ShotgunReloadEnd();
 
-	WeaponAnimInstance->Montage_Play(ItalianReloadMonatge[EShoutgunReload::ESR_ReloadEnd]);
+	FireTimer = WeaponAnimInstance->Montage_Play(ItalianReloadMonatge[EShoutgunReload::ESR_ReloadEnd]);
 
 	PlayerRef->Instance->Montage_Play(PlayerRef->ItalianReloadMonatge[EShoutgunReload::ESR_ReloadEnd]);
 
-	GetWorldTimerManager().ClearTimer(ShotgunReloadTimerHandle);
+	GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AItalianShotgun::ResetCanFire, FireTimer, false);
 
-	bIsReloading = false;
+	GetWorldTimerManager().ClearTimer(ShotgunReloadTimerHandle);
 }
 
 void AItalianShotgun::UpdateReloadAmmo()
@@ -97,5 +97,14 @@ void AItalianShotgun::UpdateReloadAmmo()
 
 	else
 		ShotgunReloadLoop();
+}
+
+void AItalianShotgun::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bCanFire = true;
+
+	bIsReloading = false;
 }
 

@@ -23,7 +23,9 @@ void AL86::WeaponFire()
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
 
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AL86::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -44,4 +46,13 @@ void AL86::ResetIsReloading()
 	bIsReloading = false;
 
 	bCanFire = true;
+}
+
+void AL86::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bCanFire = true;
+
+	bIsReloading = false;
 }

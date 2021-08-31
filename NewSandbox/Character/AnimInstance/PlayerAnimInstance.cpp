@@ -50,7 +50,7 @@ void UPlayerAnimInstance::SetAnimation(EWeaponName Name)
 {
 	Name = Player->GetCurrentWeapon()->GetCurrentWeaponName();
 
-	FString PlayerAnimTablePath(TEXT("DataTable'/Game/_Game/Blueprints/Character/Animations/DataTable/DT_PlayerAnims.DT_PlayerAnims'"));
+	FString PlayerAnimTablePath(TEXT("DataTable'/Game/_Game/Blueprints/DataTable/DT_PlayerAnims.DT_PlayerAnims'"));
 
 	UDataTable* PlayerAnimTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *PlayerAnimTablePath));
 
@@ -78,6 +78,84 @@ void UPlayerAnimInstance::SetAnimation(EWeaponName Name)
 
 			break;
 
+		case EWeaponName::EWN_BelgianAR:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("BelgianAR"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_GermanSMG:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("GermanSMG"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_HandCannon:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("HandCannon"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_SKS:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("SKS"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_XM82:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("XM82"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_Bulldog:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("Bulldog"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_L86:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("L86"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_AK74:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("AK74"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_M4A1:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("M4A1"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_NavySMG:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("NavySMG"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_ItalianShotgun:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("ItalianShotgun"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_SVD:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("SVD"), TEXT(""));
+
+			break;
+
+		case EWeaponName::EWN_ShortStrokeAR:
+
+			AnimRow = PlayerAnimTableObject->FindRow<FPlayerAnimsDataTable>(FName("ShortStrokeAR"), TEXT(""));
+
+			break;
+
 		default:
 			break;
 		}
@@ -85,6 +163,8 @@ void UPlayerAnimInstance::SetAnimation(EWeaponName Name)
 		if (AnimRow)
 		{
 			IdleSequence = AnimRow->IdleSequence;
+
+			WalkSequence = AnimRow->WalkSequence;
 		}
 	}
 }

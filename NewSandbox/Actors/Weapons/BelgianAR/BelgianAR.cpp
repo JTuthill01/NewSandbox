@@ -18,12 +18,14 @@ void ABelgianAR::WeaponFire()
 
 	if (WeaponAnimInstance)
 	{
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
 
 		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh);
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ABelgianAR::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -40,6 +42,15 @@ void ABelgianAR::WeaponReload()
 void ABelgianAR::ResetIsReloading()
 {
 	GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
+
+	bIsReloading = false;
+
+	bCanFire = true;
+}
+
+void ABelgianAR::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 
 	bIsReloading = false;
 

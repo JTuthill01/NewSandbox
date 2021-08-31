@@ -18,4 +18,5 @@ protected:
 
 private:
 	void ResetIsReloading();
+	void ResetCanFire();
 };

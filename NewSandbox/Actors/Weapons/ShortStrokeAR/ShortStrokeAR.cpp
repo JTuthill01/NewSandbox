@@ -18,12 +18,14 @@ void AShortStrokeAR::WeaponFire()
 
 	if (WeaponAnimInstance)
 	{
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
 
 		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh);
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AShortStrokeAR::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -44,4 +46,13 @@ void AShortStrokeAR::ResetIsReloading()
 	bIsReloading = false;
 
 	bCanFire = true;
+}
+
+void AShortStrokeAR::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bCanFire = true;
+
+	bIsReloading = false;
 }

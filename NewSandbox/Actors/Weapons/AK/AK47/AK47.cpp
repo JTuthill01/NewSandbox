@@ -18,12 +18,14 @@ void AAK47::WeaponFire()
 
 	if (WeaponAnimInstance)
 	{
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
 
 		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh);
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AAK47::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -44,4 +46,13 @@ void AAK47::ResetIsReloading()
 	bIsReloading = false;
 
 	bCanFire = true; 
+}
+
+void AAK47::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bIsReloading = false;
+
+	bCanFire = true;
 }

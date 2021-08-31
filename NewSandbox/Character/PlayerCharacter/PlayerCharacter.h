@@ -14,9 +14,11 @@ class UInputMappingContext;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FRemovePickupWidget);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentAmmo, int32, AmmoCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentHealth, int32, Health);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentAnimation, EWeaponName, CurrentName);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FReloadShotgun, int32, Ammo, int32, TubeCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FUpdateCurrentAmmoReload, int32, AmmoCount, int32, MagCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FUpdateCurrentWeapon, class UTexture2D*, NewWeaponIcon, FName, NewWeaponName);
 
 UCLASS()
 class NEWSANDBOX_API APlayerCharacter : public ACharacter, public IPlayerInterface
@@ -46,13 +48,30 @@ public:
 	//Getters
 	FORCEINLINE class UCameraComponent* GetCamera() const { return Camera; }
 	FORCEINLINE class UPickupWidget* GetPickupWidget() const { return PickupWidget; }
+	FORCEINLINE class USwapWeaponsWidget* GetSwapWeaponWidget() const { return SwapWidget; }
 	FORCEINLINE USkeletalMeshComponent* GetPlayerArms() const { return Arms; }
 	FORCEINLINE AWeaponBase* GetCurrentWeapon() { return CurrentWeapon; }
 	FORCEINLINE AWeaponBase* GetWeaponSlot_01() { return WeaponSlot_01; }
 	FORCEINLINE AWeaponBase* GetWeaponSlot_02() { return WeaponSlot_02; }
 
-	//Setters
-	FORCEINLINE void SetCurrentWeapon(AWeaponBase* Weapon) { CurrentWeapon = Weapon; }
+	FORCEINLINE void SetCurrenWeapon(AWeaponBase* Weapon = nullptr) { CurrentWeapon = Weapon; }
+
+public:
+
+	UFUNCTION(BlueprintCallable)
+	bool SpawnWeapon(TSubclassOf<class AWeaponBase> WeaponToSpawn);
+
+	UFUNCTION(BlueprintCallable)
+	bool SwapWeapon(TSubclassOf<AWeaponBase> WeaponToSpawn);
+
+	UFUNCTION(BlueprintCallable)
+	void EquipWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void ShowWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void SetHealth(int32 Amount);
 
 public:
 	bool CanSwitchWeapons();
@@ -71,6 +90,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FUpdateCurrentAnimation AnimationName;
 
+	UPROPERTY(BlueprintAssignable)
+	FUpdateCurrentWeapon NewWeaponUpdate;
+
+	UPROPERTY(BlueprintAssignable)
+	FUpdateCurrentHealth NewHealthAmount;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
 	FPlayerAnimsDataTable PlayerAnims;
 
@@ -86,13 +111,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-protected:
-	UFUNCTION(BlueprintCallable)
-	bool SpawnInitialWeapon(TSubclassOf<class AWeaponBase> WeaponToSpawn);
-
-	UFUNCTION(BlueprintCallable)
-	void SwapWeapon();
 
 protected:
 
@@ -118,6 +136,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Input)
 	UInputAction* InteractAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Input)
+	UInputAction* EquipAction;
 
 	//Mapping Contexts//
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = InputMappings)
@@ -157,8 +178,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widgets, meta = (AllowPrivateAccess = "true"))
 	class UPickupWidget* PickupWidget;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widgets, meta = (AllowPrivateAccess = "true"))
+	class USwapWeaponsWidget* SwapWidget;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Widgets, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UPickupWidget> WidgetToSpawn;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Widgets, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<USwapWeaponsWidget> SwapWidgetToSpawn;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	class AWeaponBase* CurrentWeapon;
@@ -201,6 +228,9 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = WeaponData, meta = (AllowPrivateAccess = "true"))
 	bool bIsChangingWeapon;
+
+	bool bIsFirstSlotFull;
+	bool bIsSecondSlotFull;
 
 	float CrouchMovementSpeed;
 	float CrouchGroundFriction;

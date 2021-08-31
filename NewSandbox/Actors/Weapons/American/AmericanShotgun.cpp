@@ -73,11 +73,13 @@ void AAmericanShotgun::ShotgunReloadEnd()
 {
 	Super::ShotgunReloadEnd();
 
-	WeaponAnimInstance->Montage_Play(AmericanReloadMonatge[EShoutgunReload::ESR_ReloadEnd]);
+	FireTimer = WeaponAnimInstance->Montage_Play(AmericanReloadMonatge[EShoutgunReload::ESR_ReloadEnd]);
 
 	PlayerRef->Instance->Montage_Play(PlayerRef->AmericanShotgunReloadMonatge[EShoutgunReload::ESR_ReloadEnd]);
 
 	GetWorldTimerManager().ClearTimer(ShotgunReloadTimerHandle);
+
+	GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AAmericanShotgun::ResetCanFire, FireTimer, false);
 }
 
 void AAmericanShotgun::UpdateReloadAmmo()
@@ -88,7 +90,16 @@ void AAmericanShotgun::UpdateReloadAmmo()
 
 	if (CurrentAmmo >= MaxMagAmmo)
 		ShotgunReloadEnd();
-
+	
 	else
 		ShotgunReloadLoop();
+}
+
+void AAmericanShotgun::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bCanFire = true;
+
+	bIsReloading = false;
 }

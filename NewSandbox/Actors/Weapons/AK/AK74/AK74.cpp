@@ -18,12 +18,14 @@ void AAK74::WeaponFire()
 
 	if (WeaponAnimInstance)
 	{
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
 
 		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh);
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AAK74::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -40,6 +42,15 @@ void AAK74::WeaponReload()
 void AAK74::ResetIsReloading()
 {
 	GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
+
+	bIsReloading = false;
+
+	bCanFire = true;
+}
+
+void AAK74::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 
 	bIsReloading = false;
 

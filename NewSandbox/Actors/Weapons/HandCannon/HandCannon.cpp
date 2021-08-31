@@ -23,7 +23,9 @@ void AHandCannon::WeaponFire()
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
 
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AHandCannon::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -44,5 +46,14 @@ void AHandCannon::ResetIsReloading()
 	bIsReloading = false;
 
 	bCanFire = true;
+}
+
+void AHandCannon::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bCanFire = true;
+
+	bIsReloading = false;
 }
 

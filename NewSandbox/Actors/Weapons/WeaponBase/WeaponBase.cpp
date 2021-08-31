@@ -31,102 +31,13 @@ void AWeaponBase::BeginPlay()
 	WeaponAnimInstance = WeaponMesh->GetAnimInstance();
 }
 
-AWeaponBase* AWeaponBase::SpawnWeapon(class APlayerCharacter* Player, AWeaponBase* CurrentWeapon, AWeaponBase* Slot1, AWeaponBase* Slot2, TSubclassOf<AWeaponBase> WeaponToSpawn, EWeaponSlot WeaponSlot, EHasWeapon HasWeapon)
-{
-	FActorSpawnParameters Params;
-	Params.Owner = this;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	FVector Location = Player->GetPlayerArms()->GetComponentLocation();
-	FRotator Rotation = Player->GetPlayerArms()->GetComponentRotation();
-
-	switch (WeaponSlot)
-	{
-	case EWeaponSlot::EWS_First_Slot:
-
-		if (!bIsFirstSlotFull)
-		{
-			Slot1 = GetWorld()->SpawnActor<AWeaponBase>(WeaponToSpawn, Location, Rotation, Params);
-
-			if (IsValid(Slot1))
-			{
-				Slot1->AttachToComponent(Player->GetPlayerArms(), FAttachmentTransformRules::SnapToTargetIncludingScale,
-					Slot1->GetSocketName());
-
-				bIsFirstSlotFull = true;
-
-				CurrentWeapon = Slot1;
-
-				HasWeapon = EHasWeapon::EHW_HasWeapon;
-
-				return CurrentWeapon;
-			}
-		}
-
-		else if (!bIsSecondSlotFull)
-		{
-			WeaponSlot = EWeaponSlot::EWS_Second_Slot;
-
-			SpawnWeapon(Player, CurrentWeapon, Slot1, Slot2, WeaponToSpawn, WeaponSlot, HasWeapon);
-
-			return CurrentWeapon;
-		}
-
-		else
-			return nullptr;
-
-		break;
-
-	case EWeaponSlot::EWS_Second_Slot:
-
-		if (!bIsSecondSlotFull)
-		{
-			Slot2 = GetWorld()->SpawnActor<AWeaponBase>(WeaponToSpawn, Location, Rotation, Params);
-
-			if (IsValid(Slot2))
-			{
-				Slot2->AttachToComponent(Player->GetPlayerArms(), FAttachmentTransformRules::SnapToTargetIncludingScale,
-					Slot2->GetSocketName());
-
-				bIsSecondSlotFull = true;
-
-				CurrentWeapon = Slot2;
-
-				HasWeapon = EHasWeapon::EHW_HasWeapon;
-
-				return CurrentWeapon;
-			}
-		}
-
-		else if (!bIsFirstSlotFull)
-		{
-			WeaponSlot = EWeaponSlot::EWS_First_Slot;
-
-			SpawnWeapon(Player, CurrentWeapon, Slot1, Slot2, WeaponToSpawn, WeaponSlot, HasWeapon);
-
-			return CurrentWeapon;
-		}
-
-		else
-			return nullptr;
-
-		break;
-
-	case EWeaponSlot::EWS_Third_Slot:
-		break;
-
-	default:
-		break;
-	}
-
-	return nullptr;
-}
-
 void AWeaponBase::WeaponFire()
 {
 	WeaponData.CurrentAmmo--;
 
 	bCanReload = false;
+
+	bCanFire = false;
 
 	FTransform ImpactTransform;
 	FHitResult ImpactResult;
@@ -253,15 +164,19 @@ void AWeaponBase::ShotgunReload()
 	bShouldReload = false;
 }
 
-bool AWeaponBase::HasFullMag()
+void AWeaponBase::SetCurrentTotalAmmo(int32 Amount)
 {
-	if (WeaponData.CurrentAmmo == WeaponData.MaxMagAmmo)
-		return true;
+	WeaponData.CurrentTotalAmmo += Amount;
 
-	return false;
+	if (WeaponData.CurrentTotalAmmo > WeaponData.MaxTotalAmmo)
+		WeaponData.CurrentTotalAmmo = WeaponData.MaxTotalAmmo;
+
+	NewTotalAmmo.Broadcast(WeaponData.CurrentTotalAmmo);
 }
 
-bool AWeaponBase::IsAmmoFull() { return CurrentTotalAmmo >= MaxTotalAmmo; }
+bool AWeaponBase::HasFullMag() { return WeaponData.CurrentAmmo >= WeaponData.MaxMagAmmo; }
+
+bool AWeaponBase::IsAmmoFull() { return WeaponData.CurrentTotalAmmo >= WeaponData.MaxTotalAmmo; }
 
 void AWeaponBase::StopFire() { bCanReload = true; }
 

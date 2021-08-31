@@ -35,4 +35,6 @@ private:
 	void UpdateReloadAmmo();
 
 	FTimerHandle ShotgunReloadTimerHandle;
+
+	void ResetCanFire();
 };

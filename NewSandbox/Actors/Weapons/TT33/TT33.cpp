@@ -23,7 +23,9 @@ void ATT33::WeaponFire()
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
 
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ATT33::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -44,4 +46,13 @@ void ATT33::ResetIsReloading()
 	bIsReloading = false;
 
 	bCanFire = true;
+}
+
+void ATT33::ResetCanFire()
+{
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+
+	bCanFire = true;
+
+	bIsReloading = false;
 }

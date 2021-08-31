@@ -34,12 +34,52 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupType)
 	EPickupType Type;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupType)
+	EPickupHealthType HealthType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupType)
+	EPickupAmmoType AmmoType;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Name)
 	FName ItemName;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Name)
+	FName SwapName;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Name)
+	FName CurrentName;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Icon)
 	class UTexture2D* IconTexture;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Icon)
+	class UTexture2D* SwapIconTexture;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Icon)
+	class UTexture2D* CurrentIconTexture;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Spawn)
+	TSubclassOf<class AWeaponBase> WeaponToSpawn;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
+	int32 HealthPackValue;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
+	int32 PistolPickupValue;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
+	int32 RiflePickupValue;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
+	int32 ShotgunPickupValue;
+
 	UPROPERTY()
 	class APlayerCharacter* Player;
+
+private:
+	void Spawn();
+	void SwapWeaponSpawn();
+
+	bool SetHealth();
+	bool SetAmmo();
 };
