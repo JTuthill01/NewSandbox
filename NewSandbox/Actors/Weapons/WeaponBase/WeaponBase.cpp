@@ -2,6 +2,8 @@
 #include "NewSandbox/Character/PlayerCharacter/PlayerCharacter.h"
 #include "NewSandbox/Interfaces/Player/PlayerInterface.h"
 #include "NewSandbox/Interfaces/TakeDamage/TakeDamageInterface.h"
+#include "NewSandbox/ImpactMaterials/ImpactPhysicalMaterial.h"
+#include "NewSandbox/Actors/Projectiles/ProjectileBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Camera/CameraComponent.h"
@@ -12,7 +14,7 @@
 #include "Particles/ParticleSystem.h"
 
 // Sets default values
-AWeaponBase::AWeaponBase() : SocketName(TEXT("WeaponSocket")), bCanFire(true), bCanReload(true), bIsReloading(false)
+AWeaponBase::AWeaponBase() : CrosshairIndex(1), SocketName(TEXT("WeaponSocket")), bCanFire(true), bCanReload(true), bIsReloading(false)
 {
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Mesh"));
 	WeaponMesh->SetCastShadow(false);
@@ -42,13 +44,43 @@ void AWeaponBase::WeaponFire()
 	FTransform ImpactTransform;
 	FHitResult ImpactResult;
 
-	BulletTrace(ImpactResult, ImpactTransform);
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.Owner = this;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	if (ImpactResult.bBlockingHit)
+	switch (FireType)
 	{
-		AddDamage(ImpactResult);
+	case EFireType::EFT_Hitscan:
 
-		//CreateImpactFX(ImpactResult);
+		BulletTrace(ImpactResult, ImpactTransform);
+
+		if (ImpactResult.bBlockingHit)
+		{
+			AddDamage(ImpactResult);
+
+			CreateImpactFX(ImpactResult);
+		}
+
+		break;
+
+	case EFireType::EFT_Projectile:
+
+		BulletTrace(ImpactResult, ImpactTransform);
+
+		Projectile = GetWorld()->SpawnActor<AProjectileBase>(ProjectileToSpawn, ImpactTransform, SpawnInfo);
+
+		if (Projectile)
+		{
+			Projectile->SetLifeSpan(Projectile->GetProjectileLifeSpan());
+
+			if (ImpactResult.bBlockingHit)
+				AddDamage(ImpactResult);
+		}
+		
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -69,76 +101,81 @@ void AWeaponBase::BulletTrace(FHitResult& HitResult, FTransform& ProjectileTrans
 
 	const bool bHasBeenHit = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), Start, End, TraceObjects, true, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true);
 
+	FVector Translation = HitResult.Location;
+	FVector SocketLocation = WeaponMesh->GetSocketLocation(FName("Fire_FX_Slot"));
+
 	if (bHasBeenHit)
 	{
-		FVector Translation = HitResult.Location;
-		FVector SocketLocation = WeaponMesh->GetSocketLocation(SocketName);
-
 		FRotator TempRotator = UKismetMathLibrary::FindLookAtRotation(SocketLocation, Translation);
 
 		ProjectileTransform = UKismetMathLibrary::MakeTransform(Translation, TempRotator, Scale);
 	}
+
+	else
+	{
+		FRotator TempRotator = PlayerRef->GetController()->GetControlRotation();
+
+		if (TempRotator == FRotator(0.F))
+			return;
+
+		else
+			ProjectileTransform = UKismetMathLibrary::MakeTransform(SocketLocation, TempRotator, Scale);
+	}
 }
 
-void AWeaponBase::AddDamage(FHitResult HitResult, bool bDoesImplimentInterface)
+void AWeaponBase::AddDamage(FHitResult HitResult)
 {
-	if (bDoesImplimentInterface)
+	if (HitResult.bBlockingHit)
+		if (HitResult.GetActor()->GetClass()->ImplementsInterface(UTakeDamageInterface::StaticClass()))
+			ITakeDamageInterface::Execute_TakeWeaponDamage(HitResult.GetActor(), WeaponData, 5.F, HitResult);
+
+		else 
+			return;
+}
+
+void AWeaponBase::CreateImpactFX(FHitResult HitResult)
+{
+	if (UImpactPhysicalMaterial* PhysMat = Cast<UImpactPhysicalMaterial>(HitResult.PhysMaterial))
 	{
-		AActor* TempActor = HitResult.GetActor();
-
-		if (TempActor)
+		if (USoundBase* ImpactSound = PhysMat->LineTraceImpactEffect.ImpactSound)
 		{
-			ITakeDamageInterface* iTemp = Cast<ITakeDamageInterface>(TempActor);
+			FVector Location = HitResult.Location;
 
-			if (iTemp)
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, Location);
+		}
+
+		if (UNiagaraSystem* HitFX = Cast<UNiagaraSystem>(PhysMat->LineTraceImpactEffect.ImpactEffect))
+		{
+			FRotator Rotation = UKismetMathLibrary::MakeRotFromX(HitResult.Normal);
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitFX, HitResult.Location, Rotation);
+		}
+
+		else if (UParticleSystem* ParticleFX = Cast<UParticleSystem>(PhysMat->LineTraceImpactEffect.ImpactEffect))
+		{
+			FRotator Rotation = UKismetMathLibrary::MakeRotFromX(HitResult.Normal);
+			FVector Location = HitResult.Location;
+
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ParticleFX, Location, Rotation);
+		}
+
+		if (UMaterialInstance* ImpactDecal = PhysMat->LineTraceImpactEffect.ImpactDecal)
+		{
+			if (USceneComponent* HitComponent = HitResult.GetComponent())
 			{
-				if (TempActor->GetClass()->ImplementsInterface(UTakeDamageInterface::StaticClass()))
-					iTemp->Execute_TakeWeaponDamage(TempActor, WeaponData, 5.F, HitResult);
+				FRotator Rotation = UKismetMathLibrary::MakeRotFromX(HitResult.Normal);
+
+				Rotation.Pitch += 180.0f;
+
+				FVector DecalSize = PhysMat->LineTraceImpactEffect.DecalSize;
+
+				float DecalLifetime = PhysMat->LineTraceImpactEffect.DecalLifeTime;
+
+				UGameplayStatics::SpawnDecalAttached(ImpactDecal, DecalSize, HitComponent, NAME_None,
+					HitResult.Location, Rotation, EAttachLocation::KeepWorldPosition, DecalLifetime);
 			}
 		}
 	}
 }
-
-//void AWeaponBase::CreateImpactFX(FHitResult HitResult)
-//{
-//	if (UImpactFX_PhysicalMaterial* PhysMat = Cast<UImpactFX_PhysicalMaterial>(HitResult.PhysMaterial))
-//	{
-//		if (USoundBase* ImpactSound = PhysMat->LineTraceImpactEffect.ImpactSound)
-//		{
-//			FVector Location = HitResult.Location;
-//
-//			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, Location);
-//		}
-//
-//		if (UNiagaraSystem* HitFX = Cast<UNiagaraSystem>(PhysMat->LineTraceImpactEffect.ImpactEffect))
-//		{
-//			FRotator Rotation = UKismetMathLibrary::MakeRotFromX(HitResult.Normal);
-//			UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitFX, HitResult.Location, Rotation);
-//		}
-//
-//		else if (UParticleSystem* ParticleFX = Cast<UParticleSystem>(PhysMat->LineTraceImpactEffect.ImpactEffect))
-//		{
-//			FRotator Rotation = UKismetMathLibrary::MakeRotFromX(HitResult.Normal);
-//			FVector Location = HitResult.Location;
-//
-//			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ParticleFX, Location, Rotation);
-//		}
-//
-//		if (UMaterialInstance* ImpactDecal = PhysMat->LineTraceImpactEffect.ImpactDecal)
-//		{
-//			if (USceneComponent* HitComponent = HitResult.GetComponent())
-//			{
-//				FRotator Rotation = UKismetMathLibrary::MakeRotFromX(HitResult.Normal);
-//				Rotation.Pitch += 180.0f;
-//				FVector DecalSize = PhysMat->LineTraceImpactEffect.DecalSize;
-//				float DecalLifetime = PhysMat->LineTraceImpactEffect.DecalLifeTime;
-//
-//				UGameplayStatics::SpawnDecalAttached(ImpactDecal, DecalSize, HitComponent, NAME_None,
-//					HitResult.Location, Rotation, EAttachLocation::KeepWorldPosition, DecalLifetime);
-//			}
-//		}
-//	}
-//}
 
 void AWeaponBase::WeaponReload()
 {

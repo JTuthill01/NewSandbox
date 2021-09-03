@@ -25,11 +25,17 @@ protected:
 	virtual void BeginPlay() override;
 
 protected:
+	UPROPERTY()
+	class APlayerCharacter* Player;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Mesh)
 	class UStaticMeshComponent* PickupMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh)
 	class USphereComponent* CollisionSphere;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Spawn)
+	TSubclassOf<class AWeaponBase> WeaponToSpawn;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupType)
 	EPickupType Type;
@@ -40,26 +46,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupType)
 	EPickupAmmoType AmmoType;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Name)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
+	UTexture2D* ItemIcon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
 	FName ItemName;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Name)
-	FName SwapName;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Name)
-	FName CurrentName;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Icon)
-	class UTexture2D* IconTexture;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Icon)
-	class UTexture2D* SwapIconTexture;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Icon)
-	class UTexture2D* CurrentIconTexture;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Spawn)
-	TSubclassOf<class AWeaponBase> WeaponToSpawn;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
 	int32 HealthPackValue;
@@ -72,9 +63,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = PickupProperties)
 	int32 ShotgunPickupValue;
-
-	UPROPERTY()
-	class APlayerCharacter* Player;
 
 private:
 	void Spawn();

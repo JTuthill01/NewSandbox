@@ -8,8 +8,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "NewSandbox/Interfaces/Interact/Interact.h"
-#include "NewSandbox/Widgets/Pickup/PickupWidget.h"
-#include "NewSandbox/Widgets/WeaponSwap/SwapWeaponsWidget.h"
 
 APlayerCharacter::APlayerCharacter() : HasWeaponEnum(EHasWeapon::EHW_NoWeapon), MaxHealth(100), CurrentHealth(MaxHealth), MaxArmor(100), CurrentArmor(MaxArmor),bIsCrouching(false), 
 	bIsChangingWeapon(false), CrouchMovementSpeed(300.F), CrouchGroundFriction(100.F),  BaseMovementSpeed(650.F), BaseGroundFriction(2.F), CrouchingCapsuleHalfHeight(44.F), 
@@ -33,10 +31,6 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	Initialize();
-
-	PickupWidget = CreateWidget<UPickupWidget>(GetWorld(), WidgetToSpawn);
-
-	SwapWidget = CreateWidget<USwapWeaponsWidget>(GetWorld(), SwapWidgetToSpawn);
 }
 
 // Called every frame
@@ -111,223 +105,17 @@ void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
-bool APlayerCharacter::SpawnWeapon(TSubclassOf<class AWeaponBase> WeaponToSpawn)
+void APlayerCharacter::Initialize()
 {
-	FActorSpawnParameters Params;
-	Params.Owner = this;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 
-	FVector Location = Arms->GetComponentLocation();
-	FRotator Rotation = Arms->GetComponentRotation();
+	Instance = Arms->GetAnimInstance();
 
-	switch (WeaponSlotEnum)
-	{
-	case EWeaponSlot::EWS_First_Slot:
+	GetWorldTimerManager().SetTimer(PickupTimerHandle, this, &APlayerCharacter::ScanForPickups, PickupTimer, true);
 
-		if (!bIsFirstSlotFull)
-		{
-			WeaponSlot_01 = GetWorld()->SpawnActor<AWeaponBase>(WeaponToSpawn, Location, Rotation, Params);
-
-			if (IsValid(WeaponSlot_01))
-			{
-				WeaponSlot_01->AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetIncludingScale,
-					WeaponSlot_01->GetSocketName());
-
-				bIsFirstSlotFull = true;
-
-				CurrentWeapon = WeaponSlot_01;
-
-				HasWeaponEnum = EHasWeapon::EHW_HasWeapon;
-
-				return true;
-			}
-		}
-
-		else if (!bIsSecondSlotFull)
-		{
-			WeaponSlotEnum = EWeaponSlot::EWS_Second_Slot;
-
-			SpawnWeapon(WeaponToSpawn);
-
-			return true;
-		}
-
-		else
-			return false;
-
-		break;
-
-	case EWeaponSlot::EWS_Second_Slot:
-
-		if (!bIsSecondSlotFull)
-		{
-			WeaponSlot_02 = GetWorld()->SpawnActor<AWeaponBase>(WeaponToSpawn, Location, Rotation, Params);
-
-			if (IsValid(WeaponSlot_02))
-			{
-				WeaponSlot_02->AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetIncludingScale,
-					WeaponSlot_02->GetSocketName());
-
-				bIsSecondSlotFull = true;
-
-				CurrentWeapon = WeaponSlot_02;
-
-				HasWeaponEnum = EHasWeapon::EHW_HasWeapon;
-
-				return true;
-			}
-		}
-
-		else if (!bIsFirstSlotFull)
-		{
-			WeaponSlotEnum = EWeaponSlot::EWS_First_Slot;
-
-			SpawnWeapon(WeaponToSpawn);
-
-			return true;
-		}
-
-		else
-			return false;
-
-		break;
-
-	case EWeaponSlot::EWS_Third_Slot:
-		break;
-
-	default:
-		break;
-	}
-
-	return false;
-}
-
-bool APlayerCharacter::SwapWeapon(TSubclassOf<AWeaponBase> WeaponToSpawn)
-{
-	if (IsValid(CurrentWeapon))
-	{
-		if (!CurrentWeapon->GetIsFiring() && !CurrentWeapon->GetIsReloading() && !bIsChangingWeapon)
-		{
-			if (CurrentWeapon == WeaponSlot_01)
-			{
-				CurrentWeapon->Destroy();
-
-				bIsFirstSlotFull = false;
-
-				CurrentWeapon = WeaponSlot_02;
-
-				SpawnWeapon(WeaponToSpawn);
-
-				AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
-
-				NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon());
-
-				return true;
-			}
-
-			else
-			{
-				CurrentWeapon->Destroy();
-
-				bIsSecondSlotFull = false;
-
-				CurrentWeapon = WeaponSlot_01;
-
-				SpawnWeapon(WeaponToSpawn);
-
-				AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
-
-				NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon());
-
-				return true;
-			}
-		}
-
-		else
-			return false;
-	}
-
-	return false;
-}
-
-void APlayerCharacter::EquipWeapon()
-{
-	if (IsValid(CurrentWeapon))
-	{
-		if (WeaponSlot_02 == nullptr || WeaponSlot_01 == nullptr)
-			return;
-
-		if (CurrentWeapon == WeaponSlot_01)
-		{
-			WeaponSlot_02->SetActorHiddenInGame(false);
-
-			WeaponSlot_01->SetActorHiddenInGame(true);
-
-			CurrentWeapon = WeaponSlot_02;
-
-			AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
-
-			NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon());
-		}
-
-		else
-		{
-			WeaponSlot_01->SetActorHiddenInGame(false);
-
-			WeaponSlot_02->SetActorHiddenInGame(true);
-
-			CurrentWeapon = WeaponSlot_01;
-
-			AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
-
-			NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon());
-		}
-	}
-}
-
-void APlayerCharacter::ShowWeapon()
-{
-	if (CurrentWeapon == WeaponSlot_02)
-	{
-		WeaponSlot_02->SetActorHiddenInGame(false);
-
-		WeaponSlot_01->SetActorHiddenInGame(true);
-
-		CurrentWeapon = WeaponSlot_02;
-
+	if (CurrentWeapon)
 		AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
-
-		NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon());
-
-		CurrentAmmoCount.Broadcast(CurrentWeapon->GetWeaponData().CurrentAmmo);
-	}
-
-	else
-	{
-		WeaponSlot_02->SetActorHiddenInGame(true);
-
-		WeaponSlot_01->SetActorHiddenInGame(false);
-
-		CurrentWeapon = WeaponSlot_01;
-
-		AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
-
-		NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon());
-
-		CurrentAmmoCount.Broadcast(CurrentWeapon->GetWeaponData().CurrentAmmo);
-	}
 }
-
-void APlayerCharacter::SetHealth(int32 Amount)
-{
-	CurrentHealth += Amount;
-
-	NewHealthAmount.Broadcast(CurrentHealth + Amount);
-
-	if (CurrentHealth >= MaxHealth)
-		CurrentHealth = MaxHealth;
-}
-
 
 void APlayerCharacter::Jump()
 {
@@ -443,9 +231,7 @@ void APlayerCharacter::FireAnimation()
 
 void APlayerCharacter::Reload()
 {
-	int32 WeaponIndex = static_cast<int32> (CurrentWeapon->GetCurrentWeaponName());
-
-	if (CurrentWeapon->GetCanReload() && CurrentWeapon->GetWeaponData().CurrentAmmo > 0)
+	if (CurrentWeapon->GetCanReload() && CurrentWeapon->GetWeaponData().CurrentTotalAmmo > 0)
 	{
 		if (!CurrentWeapon->GetIsReloading() && !bIsChangingWeapon)
 		{
@@ -522,16 +308,6 @@ void APlayerCharacter::ScanForPickups()
 				IInteract::Execute_InteractableFound(HitResult.Actor.Get());
 		}
 	}
-
-	else
-	{
-		if (PickupWidget->IsInViewport() || SwapWidget->IsInViewport())
-		{
-			PickupWidget->RemoveFromParent();
-
-			SwapWidget->RemoveFromParent();
-		}
-	}
 }
 
 void APlayerCharacter::Interact()
@@ -563,13 +339,221 @@ void APlayerCharacter::Interact()
 	}
 }
 
-void APlayerCharacter::Initialize()
+bool APlayerCharacter::SpawnWeapon(TSubclassOf<class AWeaponBase> WeaponToSpawn)
 {
-	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	Instance = Arms->GetAnimInstance();
+	FVector Location = Arms->GetComponentLocation();
+	FRotator Rotation = Arms->GetComponentRotation();
 
-	GetWorldTimerManager().SetTimer(PickupTimerHandle, this, &APlayerCharacter::ScanForPickups, PickupTimer, true);
+	switch (WeaponSlotEnum)
+	{
+	case EWeaponSlot::EWS_First_Slot:
+
+		if (!bIsFirstSlotFull)
+		{
+			WeaponSlot_01 = GetWorld()->SpawnActor<AWeaponBase>(WeaponToSpawn, Location, Rotation, Params);
+
+			if (IsValid(WeaponSlot_01))
+			{
+				WeaponSlot_01->AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetIncludingScale,
+					WeaponSlot_01->GetSocketName());
+
+				bIsFirstSlotFull = true;
+
+				CurrentWeapon = WeaponSlot_01;
+
+				HasWeaponEnum = EHasWeapon::EHW_HasWeapon;
+
+				return true;
+			}
+		}
+
+		else if (!bIsSecondSlotFull)
+		{
+			WeaponSlotEnum = EWeaponSlot::EWS_Second_Slot;
+
+			SpawnWeapon(WeaponToSpawn);
+
+			return true;
+		}
+
+		else
+			return false;
+
+		break;
+
+	case EWeaponSlot::EWS_Second_Slot:
+
+		if (!bIsSecondSlotFull)
+		{
+			WeaponSlot_02 = GetWorld()->SpawnActor<AWeaponBase>(WeaponToSpawn, Location, Rotation, Params);
+
+			if (IsValid(WeaponSlot_02))
+			{
+				WeaponSlot_02->AttachToComponent(Arms, FAttachmentTransformRules::SnapToTargetIncludingScale,
+					WeaponSlot_02->GetSocketName());
+
+				bIsSecondSlotFull = true;
+
+				CurrentWeapon = WeaponSlot_02;
+
+				HasWeaponEnum = EHasWeapon::EHW_HasWeapon;
+
+				return true;
+			}
+		}
+
+		else if (!bIsFirstSlotFull)
+		{
+			WeaponSlotEnum = EWeaponSlot::EWS_First_Slot;
+
+			SpawnWeapon(WeaponToSpawn);
+
+			return true;
+		}
+
+		else
+			return false;
+
+		break;
+
+	case EWeaponSlot::EWS_Third_Slot:
+		break;
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
+bool APlayerCharacter::SwapWeapon(TSubclassOf<AWeaponBase> WeaponToSpawn)
+{
+	if (IsValid(CurrentWeapon))
+	{
+		if (!CurrentWeapon->GetIsFiring() && !CurrentWeapon->GetIsReloading() && !bIsChangingWeapon)
+		{
+			if (CurrentWeapon == WeaponSlot_01)
+			{
+				CurrentWeapon->Destroy();
+
+				bIsFirstSlotFull = false;
+
+				CurrentWeapon = WeaponSlot_02;
+
+				SpawnWeapon(WeaponToSpawn);
+
+				AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
+
+				NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon(), CurrentWeapon->GetCrosshairIndex());
+
+				return true;
+			}
+
+			else
+			{
+				CurrentWeapon->Destroy();
+
+				bIsSecondSlotFull = false;
+
+				CurrentWeapon = WeaponSlot_01;
+
+				SpawnWeapon(WeaponToSpawn);
+
+				AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
+
+				NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon(), CurrentWeapon->GetCrosshairIndex());
+
+				return true;
+			}
+		}
+
+		else
+			return false;
+	}
+
+	return false;
+}
+
+void APlayerCharacter::EquipWeapon()
+{
+	if (IsValid(CurrentWeapon))
+	{
+		if (WeaponSlot_02 == nullptr || WeaponSlot_01 == nullptr)
+			return;
+
+		if (CurrentWeapon == WeaponSlot_01)
+		{
+			WeaponSlot_02->SetActorHiddenInGame(false);
+
+			WeaponSlot_01->SetActorHiddenInGame(true);
+
+			CurrentWeapon = WeaponSlot_02;
+
+			AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
+
+			NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon(), CurrentWeapon->GetCrosshairIndex());
+		}
+
+		else
+		{
+			WeaponSlot_01->SetActorHiddenInGame(false);
+
+			WeaponSlot_02->SetActorHiddenInGame(true);
+
+			CurrentWeapon = WeaponSlot_01;
+
+			AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
+
+			NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon(), CurrentWeapon->GetCrosshairIndex());
+		}
+	}
+}
+
+void APlayerCharacter::ShowWeapon()
+{
+	if (CurrentWeapon == WeaponSlot_02)
+	{
+		WeaponSlot_02->SetActorHiddenInGame(false);
+
+		WeaponSlot_01->SetActorHiddenInGame(true);
+
+		CurrentWeapon = WeaponSlot_02;
+
+		AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
+
+		NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon(), CurrentWeapon->GetCrosshairIndex());
+
+		CurrentAmmoCount.Broadcast(CurrentWeapon->GetWeaponData().CurrentAmmo);
+	}
+
+	else
+	{
+		WeaponSlot_02->SetActorHiddenInGame(true);
+
+		WeaponSlot_01->SetActorHiddenInGame(false);
+
+		CurrentWeapon = WeaponSlot_01;
+
+		AnimationName.Broadcast(CurrentWeapon->GetCurrentWeaponName());
+
+		NewWeaponUpdate.Broadcast(CurrentWeapon->GetWeaponData().WeaponIcon, CurrentWeapon->GetNameOfWeapon(), CurrentWeapon->GetCrosshairIndex());
+
+		CurrentAmmoCount.Broadcast(CurrentWeapon->GetWeaponData().CurrentAmmo);
+	}
+}
+
+void APlayerCharacter::SetHealth(int32 Amount)
+{
+	CurrentHealth += Amount;
+
+	NewHealthAmount.Broadcast(CurrentHealth + Amount);
+
+	if (CurrentHealth >= MaxHealth)
+		CurrentHealth = MaxHealth;
 }
 
 APlayerCharacter* APlayerCharacter::GetPlayerRef_Implementation() { return this; }

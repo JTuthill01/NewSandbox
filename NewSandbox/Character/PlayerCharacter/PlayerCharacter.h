@@ -12,13 +12,12 @@
 class UInputAction;
 class UInputMappingContext;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FRemovePickupWidget);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentAmmo, int32, AmmoCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentHealth, int32, Health);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpdateCurrentAnimation, EWeaponName, CurrentName);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FReloadShotgun, int32, Ammo, int32, TubeCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FUpdateCurrentAmmoReload, int32, AmmoCount, int32, MagCount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FUpdateCurrentWeapon, class UTexture2D*, NewWeaponIcon, FName, NewWeaponName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FUpdateCurrentWeapon, class UTexture2D*, NewWeaponIcon, FName, NewWeaponName, int32, CrosshairIndex);
 
 UCLASS()
 class NEWSANDBOX_API APlayerCharacter : public ACharacter, public IPlayerInterface
@@ -47,8 +46,6 @@ public:
 public:
 	//Getters
 	FORCEINLINE class UCameraComponent* GetCamera() const { return Camera; }
-	FORCEINLINE class UPickupWidget* GetPickupWidget() const { return PickupWidget; }
-	FORCEINLINE class USwapWeaponsWidget* GetSwapWeaponWidget() const { return SwapWidget; }
 	FORCEINLINE USkeletalMeshComponent* GetPlayerArms() const { return Arms; }
 	FORCEINLINE AWeaponBase* GetCurrentWeapon() { return CurrentWeapon; }
 	FORCEINLINE AWeaponBase* GetWeaponSlot_01() { return WeaponSlot_01; }
@@ -82,9 +79,6 @@ public:
 
 public:
 	UPROPERTY(BlueprintAssignable)
-	FRemovePickupWidget RemovePickupWidget;
-
-	UPROPERTY(BlueprintAssignable)
 	FReloadShotgun ShotgunAmmoUpdate;
 
 	UPROPERTY(BlueprintAssignable)
@@ -95,6 +89,12 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FUpdateCurrentHealth NewHealthAmount;
+
+	UPROPERTY(BlueprintAssignable)
+	FUpdateCurrentAmmo CurrentAmmoCount;
+
+	UPROPERTY(BlueprintAssignable)
+	FUpdateCurrentAmmoReload AmmoCountReload;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
 	FPlayerAnimsDataTable PlayerAnims;
@@ -175,18 +175,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = SK_Mesh, meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* Arms;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widgets, meta = (AllowPrivateAccess = "true"))
-	class UPickupWidget* PickupWidget;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widgets, meta = (AllowPrivateAccess = "true"))
-	class USwapWeaponsWidget* SwapWidget;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Widgets, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UPickupWidget> WidgetToSpawn;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Widgets, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<USwapWeaponsWidget> SwapWidgetToSpawn;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	class AWeaponBase* CurrentWeapon;
 
@@ -204,12 +192,6 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	EHasWeapon HasWeaponEnum;
-
-	UPROPERTY(BlueprintAssignable)
-	FUpdateCurrentAmmo CurrentAmmoCount;
-
-	UPROPERTY(BlueprintAssignable)
-	FUpdateCurrentAmmoReload AmmoCountReload;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Stats, meta = (AllowPrivateAccess = "true"))
 	int32 MaxHealth;

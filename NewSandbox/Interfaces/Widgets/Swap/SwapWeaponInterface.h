@@ -18,5 +18,5 @@ class NEWSANDBOX_API ISwapWeaponInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void SetSwapWeapon(class UTexture2D* SwapIcon, class UTexture2D* CurrentIcon, FName SwapText, FName CurrentText);
+	void SetSwapWeapon(class UTexture2D* WeaponToSwapIcon, class UTexture2D* CurrentIcon, FName WeaponToSwapText, FName CurrentText);
 };

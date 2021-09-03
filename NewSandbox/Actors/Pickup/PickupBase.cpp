@@ -3,11 +3,9 @@
 #include "NewSandbox/Interfaces/Player/PlayerInterface.h"
 #include "NewSandbox/Interfaces/Widgets/Pickup/WidgetInterface.h"
 #include "NewSandbox/Interfaces/Widgets/Swap/SwapWeaponInterface.h"
-#include "Kismet/GameplayStatics.h"
-#include "NewSandbox/Widgets/Pickup/PickupWidget.h"
-#include "NewSandbox/Widgets/WeaponSwap/SwapWeaponsWidget.h"
-#include "Components/SphereComponent.h"
 #include "NewSandbox/Actors/Weapons/WeaponBase/WeaponBase.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/SphereComponent.h"
 
 // Sets default values
 APickupBase::APickupBase()
@@ -72,10 +70,8 @@ void APickupBase::Interaction_Implementation()
 			break;
 
 		else
-		{
 			if (SetAmmo())
 				Destroy();
-		}
 
 		break;
 
@@ -92,7 +88,7 @@ void APickupBase::Spawn()
 
 		Player->ShowWeapon();
 
-		Player->NewWeaponUpdate.Broadcast(IconTexture, ItemName);
+		Player->NewWeaponUpdate.Broadcast(Player->GetCurrentWeapon()->GetWeaponData().WeaponIcon, Player->GetCurrentWeapon()->GetNameOfWeapon(), Player->GetCurrentWeapon()->GetCrosshairIndex());
 	}
 }
 
@@ -104,7 +100,7 @@ void APickupBase::SwapWeaponSpawn()
 
 		Player->ShowWeapon();
 
-		Player->NewWeaponUpdate.Broadcast(IconTexture, ItemName);
+		Player->NewWeaponUpdate.Broadcast(Player->GetCurrentWeapon()->GetWeaponData().WeaponIcon, Player->GetCurrentWeapon()->GetNameOfWeapon(), Player->GetCurrentWeapon()->GetCrosshairIndex());
 	}
 }
 
@@ -204,46 +200,25 @@ void APickupBase::InteractableFound_Implementation()
 
 		if (Player->HasOpenSlot())
 		{	
-			if (!Player->GetPickupWidget()->IsInViewport())
-				Player->GetPickupWidget()->AddToViewport(999);
-
-			Cast<IWidgetInterface>(Player->GetPickupWidget())->UpdatePickupWidget(ItemName, IconTexture);
+			
 		}
 
 		else if (Player->CanSwitchWeapons())
 		{
-			if (Player->GetPickupWidget()->IsInViewport())
-				Player->GetPickupWidget()->RemoveFromParent();
-
-			if (!Player->GetSwapWeaponWidget()->IsInViewport())
-				Player->GetSwapWeaponWidget()->AddToViewport(9999);
-
-			ISwapWeaponInterface::Execute_SetSwapWeapon(Player->GetSwapWeaponWidget(), SwapIconTexture, Player->GetCurrentWeapon()->GetWeaponData().WeaponIcon, SwapName, Player->GetCurrentWeapon()->GetNameOfWeapon());
+			
 		}
 
 		break;
 
 	case EPickupType::EPT_Health:
 		
-		if (!Player->GetPickupWidget()->IsInViewport())
-			Player->GetPickupWidget()->AddToViewport(999);
-
-		if (Player->GetSwapWeaponWidget()->IsInViewport())
-			Player->GetSwapWeaponWidget()->RemoveFromParent();
-
-		Cast<IWidgetInterface>(Player->GetPickupWidget())->UpdatePickupWidget(ItemName, IconTexture);
+		
 
 		break;
 
 	case EPickupType::EPT_Ammo:
 
-		if (!Player->GetPickupWidget()->IsInViewport())
-			Player->GetPickupWidget()->AddToViewport(999);
-
-		if (Player->GetSwapWeaponWidget()->IsInViewport())
-			Player->GetSwapWeaponWidget()->RemoveFromParent();
-
-		Cast<IWidgetInterface>(Player->GetPickupWidget())->UpdatePickupWidget(ItemName, IconTexture);
+		
 
 		break;
 

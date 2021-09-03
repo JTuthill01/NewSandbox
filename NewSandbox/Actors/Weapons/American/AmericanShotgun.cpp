@@ -32,12 +32,14 @@ void AAmericanShotgun::WeaponFire()
 
 	if (WeaponAnimInstance)
 	{
-		WeaponAnimInstance->Montage_Play(WeaponFireMontage);
+		FireTimer = WeaponAnimInstance->Montage_Play(WeaponFireMontage);
 
 		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh);
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), AmmoEject, EjectTransform.GetTranslation(), EjectQuat.Rotator());
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FireFX, FireTransform.GetTranslation(), FireQuat.Rotator());
+
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AAmericanShotgun::ResetCanFire, FireTimer, false);
 	}
 }
 
@@ -79,7 +81,7 @@ void AAmericanShotgun::ShotgunReloadEnd()
 
 	GetWorldTimerManager().ClearTimer(ShotgunReloadTimerHandle);
 
-	GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AAmericanShotgun::ResetCanFire, FireTimer, false);
+	bCanFire = true;
 }
 
 void AAmericanShotgun::UpdateReloadAmmo()

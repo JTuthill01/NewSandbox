@@ -26,16 +26,13 @@ public:
 	FORCEINLINE EWeaponName GetCurrentWeaponName() const { return WeaponName; }
 	FORCEINLINE EWeaponClass GetCurrentWeaponClass() const { return WeaponClass; }
 	FORCEINLINE FWeaponData GetWeaponData() const { return WeaponData; }
+	FORCEINLINE int32 GetCrosshairIndex() const {return CrosshairIndex; }
 	FORCEINLINE bool GetCanFire() const { return bCanFire;}
 	FORCEINLINE bool GetIsFiring() const { return bIsFiring; }
 	FORCEINLINE bool GetCanReload() const { return bCanReload; }
 	FORCEINLINE bool GetIsReloading() const { return bIsReloading; }
-	FORCEINLINE bool GetIsFirstSlotFull() const { return bIsFirstSlotFull; }
-	FORCEINLINE bool GetIsSecondSlotFull() const { return bIsSecondSlotFull; }
 
 	//Setters
-	FORCEINLINE void SetIsFirstSlotFull(bool IsFirstSlotFull) { bIsFirstSlotFull = IsFirstSlotFull; }
-	FORCEINLINE void SetIsSecondSlotFull(bool IsSecondSlotFull) { bIsSecondSlotFull = IsSecondSlotFull; }
 	FORCEINLINE void SetCanFire(bool CanFire) { bCanFire = CanFire; }
 	FORCEINLINE void SetCanReload(bool Reload) { bCanReload = Reload; }
 	FORCEINLINE void SetIsReloading(bool IsReloading) { bIsReloading = IsReloading; }
@@ -96,8 +93,14 @@ protected:
 	UPROPERTY()
 	class APlayerCharacter* PlayerRef;
 
+	UPROPERTY()
+	class AProjectileBase* Projectile;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WeaponMesh)
 	USkeletalMeshComponent* WeaponMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectiles)
+	TSubclassOf<AProjectileBase> ProjectileToSpawn;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Animation)
 	class UAnimMontage* WeaponFireMontage;
@@ -175,18 +178,6 @@ protected:
 
 private:
 	void BulletTrace(FHitResult& HitResult, FTransform& ProjectileTransform);
-	void AddDamage(FHitResult HitResult, bool bDoesImplimentInterface = false);
-	//void CreateImpactFX(FHitResult HitResult);
-
-private:
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = WeaponData, meta = (AllowPrivateAccess = "true"))
-	bool bIsFirstSlotFull;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = WeaponData, meta = (AllowPrivateAccess = "true"))
-	bool bIsSecondSlotFull;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = WeaponData, meta = (AllowPrivateAccess = "true"))
-	bool bIsThirdSlotFull;
-
-	FHitResult Hit;
+	void AddDamage(FHitResult HitResult);
+	void CreateImpactFX(FHitResult HitResult);
 };

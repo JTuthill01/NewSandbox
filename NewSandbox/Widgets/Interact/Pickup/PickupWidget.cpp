@@ -4,7 +4,7 @@
 
 UPickupWidget::UPickupWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
-void UPickupWidget::UpdatePickupWidget(FName Name, class UTexture2D* Icon)
+void UPickupWidget::UpdatePickupWidget_Implementation(FName Name, class UTexture2D* Icon)
 {
 	PickupText->SetText(FText::FromName(Name));
 
