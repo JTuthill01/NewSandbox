@@ -566,3 +566,6 @@ bool APlayerCharacter::CanSwitchWeapons() { return bIsFirstSlotFull = bIsSecondS
 
 bool APlayerCharacter::HasOpenSlot() { return !bIsFirstSlotFull || !bIsSecondSlotFull; }
 
+bool APlayerCharacter::IsArmorFull() { return CurrentArmor >= MaxArmor; }
+
+

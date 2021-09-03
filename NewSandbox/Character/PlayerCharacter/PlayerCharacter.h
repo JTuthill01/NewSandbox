@@ -168,6 +168,8 @@ private:
 	void FireAnimation();
 	void ReloadAnimation();
 
+	bool IsArmorFull();
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* Camera;

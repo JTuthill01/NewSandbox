@@ -222,6 +222,9 @@ void APickupBase::InteractableFound_Implementation()
 
 		break;
 
+	case EPickupType::EPT_Armor:
+		break;
+
 	default:
 		break;
 	}
